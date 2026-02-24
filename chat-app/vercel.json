@@ -1,0 +1,6 @@
+{
+  "rootDirectory": "chat-app",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install"
+}
