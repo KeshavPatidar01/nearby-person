@@ -4,24 +4,31 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
 // ==========================================
-// 1. SYNC USER (Login/Register)
+// 1. SYNC USER (Login/Register) - ✅ FIXED
 // ==========================================
 export async function syncUser() {
   try {
     const user = await currentUser();
     if (!user) return null;
 
+    // Check agar user pehle se hai
     const existingUser = await prisma.user.findUnique({
       where: { clerkId: user.id },
     });
 
-    if (existingUser) return existingUser;
+    if (existingUser) {
+      return existingUser;
+    }
 
+    // Naya user banao (Ab photo bhi save hogi)
     const newUser = await prisma.user.create({
       data: {
         clerkId: user.id,
         name: `${user.firstName} ${user.lastName}`,
         email: user.emailAddresses[0].emailAddress,
+        imageUrl: user.imageUrl, // 👈 YE MISSING THA, AB ADD KAR DIYA
+        latitude: null, // Default null
+        longitude: null // Default null
       },
     });
 
@@ -57,26 +64,34 @@ export async function updateLocation(lat, lng) {
 }
 
 // ==========================================
-// 3. GET NEARBY USERS (Radius Logic)
+// 3. GET NEARBY USERS (Radius Logic) - ✅ FIXED
 // ==========================================
 export async function getNearbyUsers() {
   try {
     const currentUserData = await currentUser();
     if (!currentUserData) return [];
 
+    // Pehle khud ka data nikalo
     const me = await prisma.user.findUnique({
       where: { clerkId: currentUserData.id },
     });
 
+    // 🛑 AGAR MERI LOCATION NAHI HAI, TO KUCH NAHI DIKHEGA
+    // (Ye logic sahi hai, par dhyan rakhna location on honi chahiye)
     if (!me?.latitude || !me?.longitude) {
-      return [];
+      console.log("User location not set yet");
+      return []; 
     }
 
+    // Baaki users nikalo (Exclude myself)
     const users = await prisma.user.findMany({
       where: {
         NOT: {
           clerkId: currentUserData.id,
         },
+        // Sirf unhe dikhao jinki location set hai
+        latitude: { not: null },
+        longitude: { not: null } 
       },
       select: {
         id: true,
@@ -85,7 +100,7 @@ export async function getNearbyUsers() {
         latitude: true,
         longitude: true,
         clerkId: true,
-        imageUrl: true, // 👈 YE LINE SABSE ZAROORI HAI (Isse Check Karo)
+        imageUrl: true, 
       }
     });
 
@@ -108,30 +123,27 @@ export async function getNearbyUsers() {
 }
 
 // ==========================================
-// 4. GET CHAT USERS (👇 Ye Missing tha, ab add kar diya hai)
+// 4. GET CHAT USERS
 // ==========================================
 export async function getChatUsers() {
   const user = await currentUser();
   if (!user) return [];
 
   try {
-    // Wo conversations dhoondo jisme current user hai
     const conversations = await prisma.conversation.findMany({
       where: {
         users: { some: { clerkId: user.id } }
       },
       include: {
-        users: true, // Users ka data
-        messages: {  // Last message sorting ke liye
-            take: 1,
-            orderBy: { createdAt: 'desc' }
+        users: true,
+        messages: {
+           take: 1,
+           orderBy: { createdAt: 'desc' }
         }
       }
     });
 
-    // Dusre user ko extract karo
     const chatUsers = conversations.map(conv => {
-      // Find the user who is NOT me
       const otherUser = conv.users.find(u => u.clerkId !== user.id);
       
       if (!otherUser) return null;
@@ -141,13 +153,12 @@ export async function getChatUsers() {
         name: otherUser.name,
         email: otherUser.email,
         clerkId: otherUser.clerkId,
+        imageUrl: otherUser.imageUrl, // 👈 Chat me bhi photo chahiye
         isHistory: true, 
-        // Agar message hai to uska time, nahi to conversation creation time
         lastMessageAt: conv.messages[0]?.createdAt || conv.createdAt
       };
-    }).filter(Boolean); // Remove nulls if any
+    }).filter(Boolean);
 
-    // Sort by latest message
     return chatUsers.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
 
   } catch (error) {

@@ -122,7 +122,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between shadow-2xl">
         <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-wide bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                Nexus<span className="text-purple-500">Grid</span>
+                Jassi<span className="text-purple-500">Keshav</span>
             </h1>
             <span className="hidden md:flex items-center gap-1 bg-green-900/30 border border-green-500/30 px-2 py-0.5 rounded-full text-[10px] text-green-400 font-medium">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
