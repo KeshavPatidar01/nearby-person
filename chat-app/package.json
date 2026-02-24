@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "eslint",
-    "postinstall": "prisma generate"  // 👈 YE LINE ADD KARO
+    "postinstall": "prisma generate" 
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.1",
